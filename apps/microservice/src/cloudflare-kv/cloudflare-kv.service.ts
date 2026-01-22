@@ -9,9 +9,7 @@ interface KvWriteOptions {
 
 type HttpMethod = 'GET' | 'PUT' | 'DELETE'
 
-type Result<T> =
-  | { ok: true; value: T }
-  | { ok: false; error: Error }
+type Result<T> = { ok: true; value: T } | { ok: false; error: Error }
 
 @Injectable()
 export class CloudflareKvService {
@@ -23,7 +21,7 @@ export class CloudflareKvService {
 
   private readonly methodConfigs: Record<HttpMethod, (value?: unknown) => Partial<RequestInit>> = {
     GET: () => ({}),
-    PUT: (value) => ({
+    PUT: value => ({
       body: JSON.stringify(value),
       headers: { 'Content-Type': 'application/json' },
     }),
@@ -55,7 +53,11 @@ export class CloudflareKvService {
   async put(key: string, value: unknown, options: KvWriteOptions): Promise<void> {
     await this.retry.executeWithRetry(
       () => this.executeRequest(key, 'PUT', options.correlationId, value),
-      { maxAttempts: this.maxRetries, backoffMs: DEFAULT_BACKOFF_MS, correlationId: options.correlationId }
+      {
+        maxAttempts: this.maxRetries,
+        backoffMs: DEFAULT_BACKOFF_MS,
+        correlationId: options.correlationId,
+      }
     )
   }
 
@@ -63,7 +65,11 @@ export class CloudflareKvService {
   async delete(key: string, options: KvWriteOptions): Promise<void> {
     await this.retry.executeWithRetry(
       () => this.executeRequest(key, 'DELETE', options.correlationId),
-      { maxAttempts: this.maxRetries, backoffMs: DEFAULT_BACKOFF_MS, correlationId: options.correlationId }
+      {
+        maxAttempts: this.maxRetries,
+        backoffMs: DEFAULT_BACKOFF_MS,
+        correlationId: options.correlationId,
+      }
     )
   }
 
@@ -126,7 +132,11 @@ export class CloudflareKvService {
     }
   }
 
-  private async fetch(url: string, options: RequestInit, correlationId: string): Promise<Response> {
+  private async fetch(
+    url: string,
+    options: RequestInit,
+    _correlationId: string
+  ): Promise<Response> {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), this.httpTimeoutMs)
 

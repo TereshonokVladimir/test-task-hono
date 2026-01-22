@@ -11,12 +11,9 @@ export const DEFAULT_BACKOFF_MS = [1000, 3000, 10000, 20000, 30000]
 export const calculateBackoffDelay = (attempt: number, delays: number[]): number =>
   delays[Math.min(attempt - 1, delays.length - 1)]
 
-const sleep = (ms: number): Promise<void> =>
-  new Promise(resolve => setTimeout(resolve, ms))
+const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
 
-type TryResult<T> =
-  | { success: true; value: T }
-  | { success: false; error: Error }
+type TryResult<T> = { success: true; value: T } | { success: false; error: Error }
 
 @Injectable()
 export class RetryService {

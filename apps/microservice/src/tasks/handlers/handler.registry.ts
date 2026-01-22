@@ -5,7 +5,7 @@ import type { EventHandler } from './base.handler'
 const HANDLER_METADATA_KEY = Symbol('EVENT_HANDLER')
 
 export const EventHandlerMeta = (): ClassDecorator => {
-  return (target) => {
+  return target => {
     Reflect.defineMetadata(HANDLER_METADATA_KEY, true, target)
   }
 }

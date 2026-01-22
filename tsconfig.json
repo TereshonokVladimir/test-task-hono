@@ -6,10 +6,5 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true
-  },
-  "references": [
-    { "path": "./apps/worker" },
-    { "path": "./apps/microservice" },
-    { "path": "./packages/shared" }
-  ]
+  }
 }

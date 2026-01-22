@@ -9,17 +9,29 @@
   "scripts": {
     "dev:worker": "npm run dev --workspace=apps/worker",
     "dev:microservice": "npm run start:dev --workspace=apps/microservice",
+    "build": "npm run build --workspaces --if-present",
     "build:worker": "npm run build --workspace=apps/worker",
     "build:microservice": "npm run build --workspace=apps/microservice",
+    "build:shared": "npm run build --workspace=packages/shared",
     "deploy:worker": "npm run deploy --workspace=apps/worker",
     "test": "npm run test --workspaces --if-present",
-    "typecheck": "tsc --build",
-    "lint": "eslint apps packages --ext .ts,.tsx",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint . --ext .ts,.tsx --max-warnings 0",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,json,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,yml,yaml}\"",
+    "validate": "npm run lint && npm run format:check && npm run typecheck && npm run test",
     "nats:start": "docker-compose up -d nats",
     "nats:stop": "docker-compose down",
-    "clean": "rm -rf apps/*/dist packages/*/dist node_modules/.cache"
+    "clean": "rm -rf apps/*/dist packages/*/dist node_modules/.cache",
+    "prepare": "npm run build:shared"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.4.0",
     "typescript": "^5.7.2"
   },
   "engines": {

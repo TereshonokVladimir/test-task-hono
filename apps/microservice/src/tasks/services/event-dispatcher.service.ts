@@ -18,8 +18,8 @@ export class EventDispatcherService {
     if (this.initialized) return
     this.initialized = true
 
-    const subscriptions = Array.from(this.handlers.entries()).map(
-      ([subject, handler]) => this.subscribe(subject, handler)
+    const subscriptions = Array.from(this.handlers.entries()).map(([subject, handler]) =>
+      this.subscribe(subject, handler)
     )
     await Promise.all(subscriptions)
     this.logger.log(`Subscribed to ${this.handlers.size} subjects`)

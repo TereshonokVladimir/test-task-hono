@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { CloudflareKvService } from '../../cloudflare-kv/cloudflare-kv.service'
 import { getTaskKey } from '@repo/shared'
 import type { Task } from '@repo/shared'

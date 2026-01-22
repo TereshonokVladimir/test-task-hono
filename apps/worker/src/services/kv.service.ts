@@ -18,14 +18,13 @@ export const createTaskRepository = (kv: KVNamespace) => ({
   },
 })
 
-const parse = (data: string | null): Task | null =>
-  data ? JSON.parse(data) as Task : null
+const parse = (data: string | null): Task | null => (data ? (JSON.parse(data) as Task) : null)
 
 const byDateDesc = (a: Task | null, b: Task | null): number =>
   a && b ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() : 0
 
 export const applyFilters = (tasks: Task[], filters: { status?: string }): Task[] =>
-  filters.status ? tasks.filter(t => t.status === filters.status as TaskStatus) : tasks
+  filters.status ? tasks.filter(t => t.status === (filters.status as TaskStatus)) : tasks
 
 export const paginate = <T>(items: T[], offset: number, limit: number) => ({
   data: items.slice(offset, offset + limit),

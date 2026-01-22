@@ -11,9 +11,10 @@ export interface EventHandler<TInput, TOutput = void> {
   execute(event: TInput, correlationId: string): Promise<TOutput>
 }
 
-export abstract class BaseEventHandler<TInput extends EventPayload, TOutput = void>
-  implements EventHandler<TInput, TOutput>
-{
+export abstract class BaseEventHandler<
+  TInput extends EventPayload,
+  TOutput = void,
+> implements EventHandler<TInput, TOutput> {
   abstract readonly subject: string
   abstract validate(data: unknown): SafeParseReturnType<unknown, TInput>
   abstract execute(event: TInput, correlationId: string): Promise<TOutput>

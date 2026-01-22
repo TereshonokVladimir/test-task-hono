@@ -96,7 +96,8 @@ export class NatsService implements OnModuleInit, OnModuleDestroy {
       try {
         const payload = this.codec.decode(msg.data)
         parsedData = JSON.parse(payload)
-        correlationId = (parsedData as Record<string, unknown>)?.correlationId as string || crypto.randomUUID()
+        correlationId =
+          ((parsedData as Record<string, unknown>)?.correlationId as string) || crypto.randomUUID()
 
         this.logger.log(`[${correlationId}] Received on ${subject}`)
         await handler(parsedData, correlationId)

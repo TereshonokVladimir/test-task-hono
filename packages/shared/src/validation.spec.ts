@@ -3,8 +3,6 @@ import {
   validateTaskUpdatedEvent,
   validateTaskDeletedEvent,
   parseTaskCreatedEvent,
-  parseTaskUpdatedEvent,
-  parseTaskDeletedEvent,
   isValidTaskStatus,
   getTaskKey,
   parseTaskKey,

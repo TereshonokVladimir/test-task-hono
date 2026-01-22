@@ -12,22 +12,18 @@ const EVENT_HANDLERS: Type<EventHandler<unknown>>[] = [
 ]
 
 @Module({
-  providers: [
-    TaskRepository,
-    EventDispatcherService,
-    ...EVENT_HANDLERS,
-  ],
+  providers: [TaskRepository, EventDispatcherService, ...EVENT_HANDLERS],
 })
 export class TasksModule implements OnModuleInit {
   constructor(
     private readonly moduleRef: ModuleRef,
-    private readonly dispatcher: EventDispatcherService,
+    private readonly dispatcher: EventDispatcherService
   ) {}
 
   async onModuleInit() {
-    EVENT_HANDLERS
-      .map(Handler => this.moduleRef.get(Handler, { strict: false }))
-      .forEach(handler => this.dispatcher.registerHandler(handler))
+    EVENT_HANDLERS.map(Handler => this.moduleRef.get(Handler, { strict: false })).forEach(handler =>
+      this.dispatcher.registerHandler(handler)
+    )
 
     await this.dispatcher.initialize()
   }

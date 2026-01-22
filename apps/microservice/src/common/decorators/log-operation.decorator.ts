@@ -16,20 +16,17 @@ interface LogOperationOptions {
 export function LogOperation(operationName?: string, options: LogOperationOptions = {}) {
   const { correlationIdIndex } = options
 
-  return function (
-    target: object,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
-  ) {
+  return function (target: object, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value
     const className = target.constructor.name
     const operation = operationName || propertyKey
 
     descriptor.value = async function (...args: unknown[]) {
       const logger = getLogger(className)
-      const correlationId = correlationIdIndex !== undefined
-        ? String(args[correlationIdIndex] || 'unknown')
-        : extractCorrelationId(args)
+      const correlationId =
+        correlationIdIndex !== undefined
+          ? String(args[correlationIdIndex] || 'unknown')
+          : extractCorrelationId(args)
       const startTime = Date.now()
 
       logger.log(`[${correlationId}] → ${operation}`)

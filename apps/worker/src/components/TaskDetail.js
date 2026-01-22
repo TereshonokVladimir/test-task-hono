@@ -1,0 +1,6 @@
+import { jsx as _jsx, jsxs as _jsxs } from "hono/jsx/jsx-runtime";
+import { StatusBadge } from './StatusBadge';
+import { formatDateLong } from '../utils/date';
+export const TaskDetail = ({ task }) => {
+    return (_jsxs("div", { children: [_jsx("a", { href: "/", class: "back-link", children: "\u2190 Back to Tasks" }), _jsxs("div", { class: "detail-container", children: [_jsxs("div", { class: "detail-header", children: [_jsxs("div", { children: [_jsx("h1", { class: "detail-title", children: task.title }), _jsx("span", { class: "detail-id", children: task.id })] }), _jsx(StatusBadge, { status: task.status })] }), _jsxs("div", { class: "detail-section", children: [_jsx("div", { class: "detail-label", children: "Description" }), _jsx("div", { class: "detail-value", children: task.description })] }), _jsxs("div", { class: "detail-timestamps", children: [_jsxs("div", { children: [_jsx("div", { class: "detail-label", children: "Created" }), _jsx("div", { class: "detail-value", children: formatDateLong(task.createdAt) })] }), _jsxs("div", { children: [_jsx("div", { class: "detail-label", children: "Last Updated" }), _jsx("div", { class: "detail-value", children: formatDateLong(task.updatedAt) })] })] })] })] }));
+};

@@ -17,9 +17,11 @@ export class LoggingInterceptor implements NestInterceptor {
           const duration = Date.now() - startTime
           this.logger.log(`[${correlationId}] ${method} ${url} - ${duration}ms`)
         },
-        error: (error) => {
+        error: error => {
           const duration = Date.now() - startTime
-          this.logger.error(`[${correlationId}] ${method} ${url} - ${duration}ms - ${error.message}`)
+          this.logger.error(
+            `[${correlationId}] ${method} ${url} - ${duration}ms - ${error.message}`
+          )
         },
       })
     )
