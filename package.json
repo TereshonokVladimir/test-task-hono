@@ -25,8 +25,18 @@
     "nats:stop": "docker-compose down",
     "clean": "rm -rf apps/*/dist packages/*/dist node_modules/.cache",
     "prepare": "npm run build:shared",
-    "demo:seed": "npx ts-node scripts/test-nats-flow.ts seed",
-    "demo:flow": "npx ts-node scripts/test-nats-flow.ts demo"
+    "demo:seed": "npx ts-node -P scripts/tsconfig.json scripts/test-nats-flow.ts seed",
+    "demo:flow": "npx ts-node -P scripts/tsconfig.json scripts/test-nats-flow.ts demo",
+    "task": "npx ts-node -P scripts/tsconfig.json scripts/task-cli.ts",
+    "task:create": "npx ts-node -P scripts/tsconfig.json scripts/task-cli.ts create",
+    "task:update": "npx ts-node -P scripts/tsconfig.json scripts/task-cli.ts update",
+    "task:delete": "npx ts-node -P scripts/tsconfig.json scripts/task-cli.ts delete",
+    "task:help": "npx ts-node -P scripts/tsconfig.json scripts/task-cli.ts help",
+    "local:task": "bash scripts/local-task-cli.sh",
+    "local:create": "bash scripts/local-task-cli.sh create",
+    "local:update": "bash scripts/local-task-cli.sh update",
+    "local:delete": "bash scripts/local-task-cli.sh delete",
+    "local:list": "bash scripts/local-task-cli.sh list"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.0.0",
