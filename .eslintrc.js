@@ -28,4 +28,12 @@ module.exports = {
     'no-var': 'error',
   },
   ignorePatterns: ['dist', 'node_modules', 'coverage', '.wrangler'],
+  overrides: [
+    {
+      files: ['scripts/**/*.ts'],
+      rules: {
+        'no-console': 'off',
+      },
+    },
+  ],
 }
