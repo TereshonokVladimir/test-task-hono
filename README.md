@@ -16,6 +16,9 @@ A minimal production-minded microservice system with:
 - **Health checks** with service status monitoring
 - **Secure headers** middleware
 - **Cache headers** for API responses
+- **ESLint + Prettier** for code quality
+- **CI/CD Pipeline** with GitHub Actions
+- **Task CLI** for easy testing
 
 ## 📐 Architecture Overview
 
@@ -33,6 +36,7 @@ A minimal production-minded microservice system with:
 │  │  • GET /tasks/:id  → SSR Task Detail Page                       │    │
 │  │  • GET /api/tasks  → JSON Task List                             │    │
 │  │  • GET /api/tasks/:id → JSON Task Detail                        │    │
+│  │  • GET /health     → Health check                               │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                    │                                     │
 │                                    ▼ READ                                │
@@ -53,96 +57,32 @@ A minimal production-minded microservice system with:
 │  │  • tasks.deleted  → Delete task from KV                         │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                    ▲                                     │
-│                                    │                                     │
 └────────────────────────────────────┼─────────────────────────────────────┘
-                                     │
                                      │ Subscribe
                                      │
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                           NATS SERVER                                    │
 │                      (nats://localhost:4222)                             │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │  Subjects:                                                       │    │
-│  │  • tasks.created                                                 │    │
-│  │  • tasks.updated                                                 │    │
-│  │  • tasks.deleted                                                 │    │
+│  │  Subjects: tasks.created | tasks.updated | tasks.deleted        │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────┘
                                      ▲
-                                     │ Publish (CLI / External System)
+                                     │ Publish
                                      │
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                         NATS CLI / Producer                              │
-│                    nats pub tasks.created '{...}'                        │
+│                    CLI / External System / Producer                      │
+│               npm run task:create / npm run local:create                 │
 └─────────────────────────────────────────────────────────────────────────┘
-```
-
-## 🗂️ Data Flow
-
-### Create Task
-1. External system publishes to `tasks.created`
-2. Microservice receives event, validates payload
-3. Microservice writes to Cloudflare KV via REST API (with retry/backoff)
-4. User refreshes `/` page to see new task
-
-### Update Task
-1. External system publishes to `tasks.updated`
-2. Microservice fetches existing task from KV (GET)
-3. Merges updates and writes back (PUT with retry/backoff)
-4. User refreshes `/tasks/:id` to see updated data
-
-### Delete Task
-1. External system publishes to `tasks.deleted`
-2. Microservice deletes from KV (DELETE with retry/backoff)
-3. User refreshes `/` to confirm task is gone
-
-## 📋 NATS Subjects & Contracts
-
-### `tasks.created`
-```json
-{
-  "correlationId": "uuid-v4",
-  "data": {
-    "id": "task-123",
-    "title": "My Task",
-    "description": "Task description",
-    "status": "pending" | "in_progress" | "completed" | "cancelled"
-  }
-}
-```
-
-### `tasks.updated`
-```json
-{
-  "correlationId": "uuid-v4",
-  "data": {
-    "id": "task-123",
-    "title": "Updated Title",        // optional
-    "description": "New desc",       // optional
-    "status": "completed"            // optional
-  }
-}
-```
-
-### `tasks.deleted`
-```json
-{
-  "correlationId": "uuid-v4",
-  "data": {
-    "id": "task-123"
-  }
-}
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+
-- Bun 1.0+
+- Node.js 20+
 - Docker (for NATS)
-- Cloudflare account with KV namespace
-- NATS CLI (optional, for publishing events)
+- Cloudflare account with KV namespace (for production)
 
 ### 1. Clone & Install
 
@@ -152,22 +92,185 @@ cd hono-nestjs-nats-kv
 npm install
 ```
 
-### 2. Start NATS Server
+### 2. Start Services
 
 ```bash
+# Terminal 1: Start NATS
 npm run nats:start
-# or directly:
-docker-compose up -d nats
+
+# Terminal 2: Start Worker (http://localhost:8787)
+npm run dev:worker
+
+# Terminal 3: Start Microservice (http://localhost:3001)
+npm run dev:microservice
 ```
 
-### 3. Configure Cloudflare KV
+### 3. Seed Demo Data
 
-Create a KV namespace in Cloudflare dashboard:
-1. Go to Workers & Pages → KV
-2. Create namespace: `tasks-kv`
-3. Copy namespace ID
+```bash
+# Add sample tasks to local KV
+npm run local:create -- demo-1 "Setup Project" "Initialize the repository" completed
+npm run local:create -- demo-2 "Implement Features" "Build core functionality" in_progress
+npm run local:create -- demo-3 "Write Tests" "Add unit tests" pending
+```
 
-Update `apps/worker/wrangler.toml`:
+### 4. Open Browser
+
+Visit http://localhost:8787 to see tasks!
+
+---
+
+## 📋 Task CLI
+
+### Local Task CLI (for development)
+
+Works directly with local KV storage:
+
+```bash
+# Create task
+npm run local:create -- <id> <title> <description> [status]
+npm run local:create -- task-1 "Fix Bug" "Fix login issue" pending
+
+# Update task
+npm run local:update -- <id> <title> <description> <status>
+npm run local:update -- task-1 "Bug Fixed" "Login working" completed
+
+# Delete task
+npm run local:delete -- <id>
+npm run local:delete -- task-1
+
+# List all keys
+npm run local:list
+
+# Help
+npm run local:task
+```
+
+### NATS Event CLI (for production)
+
+Publishes events to NATS (requires Cloudflare credentials):
+
+```bash
+# Create task
+npm run task:create -- "Task Title" "Description" pending
+
+# Update task
+npm run task:update -- task-123 --status=completed --title="New Title"
+
+# Delete task
+npm run task:delete -- task-123
+
+# Help
+npm run task:help
+```
+
+### Status Values
+
+`pending` | `in_progress` | `completed` | `cancelled`
+
+---
+
+## 🌐 API Endpoints
+
+### Web Pages (SSR)
+
+| Route | Description |
+|-------|-------------|
+| `GET /` | Task list page |
+| `GET /tasks/:id` | Task detail page |
+
+### REST API
+
+| Route | Description |
+|-------|-------------|
+| `GET /api/tasks` | List all tasks |
+| `GET /api/tasks?status=pending` | Filter by status |
+| `GET /api/tasks?offset=0&limit=10` | Pagination |
+| `GET /api/tasks/:id` | Get single task |
+| `GET /health` | Health check |
+
+### Examples
+
+```bash
+# List all tasks
+curl http://localhost:8787/api/tasks | jq
+
+# Filter by status
+curl "http://localhost:8787/api/tasks?status=in_progress" | jq
+
+# Get single task
+curl http://localhost:8787/api/tasks/demo-1 | jq
+
+# Health check
+curl http://localhost:8787/health
+curl http://localhost:3001/health
+```
+
+---
+
+## 🔧 Development
+
+### Scripts
+
+```bash
+# Development
+npm run dev:worker        # Start worker locally
+npm run dev:microservice  # Start microservice locally
+npm run nats:start        # Start NATS server
+npm run nats:stop         # Stop NATS server
+
+# Code Quality
+npm run lint              # Run ESLint
+npm run lint:fix          # Fix ESLint errors
+npm run format            # Format with Prettier
+npm run format:check      # Check formatting
+npm run typecheck         # TypeScript check
+npm run test              # Run all tests
+npm run validate          # Run all checks
+
+# Build & Deploy
+npm run build             # Build all packages
+npm run deploy:worker     # Deploy to Cloudflare
+```
+
+### Code Quality
+
+The project uses:
+- **ESLint** with TypeScript support
+- **Prettier** for formatting (no semicolons, single quotes)
+- **TypeScript** strict mode
+
+```bash
+# Run all quality checks
+npm run validate
+```
+
+---
+
+## 🚢 CI/CD Pipeline
+
+GitHub Actions workflow (`.github/workflows/ci.yml`):
+
+```yaml
+Jobs:
+  ├── lint      # ESLint check
+  ├── format    # Prettier check
+  ├── typecheck # TypeScript check
+  ├── test      # Jest tests
+  ├── build     # Build all packages
+  └── deploy    # Deploy to Cloudflare (main branch only)
+```
+
+The pipeline runs on:
+- Push to `main`
+- Pull requests to `main`
+
+---
+
+## ⚙️ Configuration
+
+### Worker (apps/worker/wrangler.toml)
+
 ```toml
 [[kv_namespaces]]
 binding = "TASKS_KV"
@@ -175,104 +278,21 @@ id = "YOUR_KV_NAMESPACE_ID"
 preview_id = "YOUR_KV_PREVIEW_NAMESPACE_ID"
 ```
 
-### 4. Configure Microservice
+### Microservice (apps/microservice/.env)
 
-```bash
-cd apps/microservice
-cp .env.example .env.local
-```
-
-Edit `.env.local`:
 ```bash
 NATS_URL=nats://localhost:4222
 CF_ACCOUNT_ID=your_account_id
 CF_NAMESPACE_ID=your_namespace_id
 CF_API_TOKEN=your_api_token
+HTTP_TIMEOUT_MS=5000
 ```
 
-### 5. Run Locally
-
-**Terminal 1 — Worker (development):**
-```bash
-npm run dev:worker
-# Runs at http://localhost:8787
-```
-
-**Terminal 2 — Microservice:**
-```bash
-cd apps/microservice
-bun run start:dev
-# Runs at http://localhost:3001
-```
-
-### 6. Test the Pipeline
-
-**Create a task:**
-```bash
-nats pub tasks.created '{
-  "correlationId": "test-001",
-  "data": {
-    "id": "task-1",
-    "title": "My First Task",
-    "description": "This is a test task",
-    "status": "pending"
-  }
-}'
-```
-
-**Update the task:**
-```bash
-nats pub tasks.updated '{
-  "correlationId": "test-002",
-  "data": {
-    "id": "task-1",
-    "status": "completed",
-    "title": "My First Task (Done!)"
-  }
-}'
-```
-
-**Delete the task:**
-```bash
-nats pub tasks.deleted '{
-  "correlationId": "test-003",
-  "data": {
-    "id": "task-1"
-  }
-}'
-```
-
-Open http://localhost:8787 and refresh after each command.
-
-## 🌐 Deploy to Cloudflare
-
-### Deploy Worker
-
-```bash
-npm run deploy:worker
-# or
-cd apps/worker && npx wrangler deploy
-```
-
-### Deploy Microservice
-
-The microservice needs to run on a server with network access to NATS and Cloudflare API. Options:
-- Fly.io
-- Railway
-- Any VPS with Docker
-
-Example Dockerfile for microservice:
-```dockerfile
-FROM oven/bun:1
-WORKDIR /app
-COPY . .
-RUN bun install
-CMD ["bun", "run", "start:prod"]
-```
+---
 
 ## 🔄 Retry & Backoff
 
-The microservice implements retry with exponential backoff for KV writes:
+KV writes use exponential backoff:
 
 | Attempt | Delay |
 |---------|-------|
@@ -281,74 +301,136 @@ The microservice implements retry with exponential backoff for KV writes:
 | 3 | 3s |
 | 4 | 10s |
 | 5 | 20s |
-| 6+ | 30s |
 
-Max 5 retry attempts. All attempts are logged with `X-Correlation-Id`.
+Max 5 attempts with full logging.
 
-## 🔍 Observability
-
-### X-Correlation-Id
-
-- Worker: Reads from request header or generates UUID, includes in response
-- Microservice: Reads from NATS message payload, logs all operations with it
-
-### Logs
-
-```
-[abc-123] 📨 Received message on tasks.created
-[abc-123] Processing tasks.created event
-[abc-123] PUT tasks:task-1
-[abc-123] Attempt 1/5
-[abc-123] ✅ PUT tasks:task-1 successful
-[abc-123] ✅ Task created: task-1
-```
-
-## 🧪 Tests
-
-```bash
-# Run all tests
-npm test
-
-# Run microservice tests
-cd apps/microservice && bun test
-
-# Run specific test file
-bun test retry.service.spec.ts
-```
+---
 
 ## 📁 Project Structure
 
 ```
 .
+├── .github/
+│   └── workflows/
+│       └── ci.yml              # GitHub Actions CI/CD
 ├── apps/
-│   ├── worker/                  # Hono Cloudflare Worker
+│   ├── worker/                 # Hono Cloudflare Worker
 │   │   ├── src/
-│   │   │   ├── components/      # JSX SSR components
-│   │   │   ├── middleware/      # Correlation ID middleware
-│   │   │   ├── index.tsx        # Main app entry
-│   │   │   └── types.ts         # TypeScript types
-│   │   ├── wrangler.toml        # Cloudflare config
-│   │   └── package.json
+│   │   │   ├── components/     # React SSR components
+│   │   │   ├── middleware/     # Correlation ID middleware
+│   │   │   ├── services/       # KV service
+│   │   │   ├── styles/         # CSS-in-JS styles
+│   │   │   ├── utils/          # Date formatters
+│   │   │   └── index.tsx       # Main app entry
+│   │   └── wrangler.toml
 │   │
-│   └── microservice/            # NestJS + Bun microservice
+│   └── microservice/           # NestJS + Bun microservice
 │       ├── src/
-│       │   ├── nats/            # NATS connection & subscriptions
-│       │   ├── cloudflare-kv/   # KV REST API client + retry logic
-│       │   ├── tasks/           # Task event handlers
-│       │   ├── app.module.ts
-│       │   └── main.ts
-│       ├── .env.example
-│       └── package.json
+│       │   ├── nats/           # NATS connection
+│       │   ├── cloudflare-kv/  # KV REST API + retry
+│       │   ├── tasks/
+│       │   │   ├── handlers/   # Event handlers
+│       │   │   ├── repositories/
+│       │   │   └── services/
+│       │   └── common/         # Shared utilities
+│       └── .env.example
 │
 ├── packages/
-│   └── shared/                  # Shared types & validation
+│   └── shared/                 # Shared types & validation
 │       └── src/
-│           └── index.ts
+│           └── index.ts        # Zod schemas, types
 │
-├── docker-compose.yml           # NATS server
-├── package.json                 # Workspace root
-└── README.md
+├── scripts/
+│   ├── task-cli.ts             # NATS event CLI
+│   ├── local-task-cli.sh       # Local KV CLI
+│   ├── seed-kv.ts              # Seed script
+│   └── test-nats-flow.ts       # Demo script
+│
+├── .eslintrc.js                # ESLint config
+├── .prettierrc                 # Prettier config
+├── docker-compose.yml          # NATS server
+└── package.json                # Workspace root
 ```
+
+---
+
+## 🎬 Demo Flow
+
+### 1. Setup
+
+```bash
+npm run nats:start
+npm run dev:worker
+npm run dev:microservice
+```
+
+### 2. Create Tasks
+
+```bash
+npm run local:create -- task-1 "Setup CI/CD" "Configure GitHub Actions" completed
+npm run local:create -- task-2 "Write Tests" "Add unit tests" in_progress
+npm run local:create -- task-3 "Deploy" "Deploy to production" pending
+```
+
+### 3. View
+
+Open http://localhost:8787
+
+### 4. Update
+
+```bash
+npm run local:update -- task-3 "Deployed!" "Successfully deployed" completed
+```
+
+### 5. Delete
+
+```bash
+npm run local:delete -- task-1
+```
+
+---
+
+## 📋 NATS Event Contracts
+
+### tasks.created
+
+```json
+{
+  "correlationId": "uuid-v4",
+  "task": {
+    "id": "task-123",
+    "title": "My Task",
+    "description": "Description",
+    "status": "pending",
+    "createdAt": "2026-01-22T00:00:00.000Z",
+    "updatedAt": "2026-01-22T00:00:00.000Z"
+  }
+}
+```
+
+### tasks.updated
+
+```json
+{
+  "correlationId": "uuid-v4",
+  "id": "task-123",
+  "updates": {
+    "title": "New Title",
+    "status": "completed"
+  }
+}
+```
+
+### tasks.deleted
+
+```json
+{
+  "correlationId": "uuid-v4",
+  "id": "task-123"
+}
+```
+
+---
 
 ## 📝 License
 
