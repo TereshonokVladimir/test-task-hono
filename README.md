@@ -258,12 +258,41 @@ Jobs:
   ├── typecheck # TypeScript check
   ├── test      # Jest tests
   ├── build     # Build all packages
-  └── deploy    # Deploy to Cloudflare (main branch only)
+  └── deploy    # Deploy to Cloudflare (disabled by default)
 ```
 
 The pipeline runs on:
 - Push to `main`
 - Pull requests to `main`
+
+### Enable Cloudflare Deployment
+
+Deploy is **disabled by default**. To enable:
+
+1. **Add GitHub Secret:**
+   - Go to repo → Settings → Secrets and variables → Actions
+   - Click "New repository secret"
+   - Name: `CLOUDFLARE_API_TOKEN`
+   - Value: Your Cloudflare API token (with Workers edit permission)
+
+2. **Update `apps/worker/wrangler.toml`:**
+   ```toml
+   [[kv_namespaces]]
+   binding = "TASKS_KV"
+   id = "your_real_kv_namespace_id"
+   preview_id = "your_real_kv_preview_id"
+   ```
+
+3. **Enable deploy job in `.github/workflows/ci.yml`:**
+   ```yaml
+   # Change this line:
+   if: false  # Disabled until Cloudflare credentials are configured
+   
+   # To this:
+   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+   ```
+
+4. **Push changes** — deploy will run automatically on main branch
 
 ---
 
