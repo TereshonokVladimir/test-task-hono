@@ -1,0 +1,5 @@
+export * from './base.handler'
+export * from './task-created.handler'
+export * from './task-updated.handler'
+export * from './task-deleted.handler'
+export * from './handler.registry'

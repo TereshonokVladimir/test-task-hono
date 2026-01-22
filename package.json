@@ -1,0 +1,28 @@
+{
+  "name": "hono-nestjs-nats-kv",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:worker": "npm run dev --workspace=apps/worker",
+    "dev:microservice": "npm run start:dev --workspace=apps/microservice",
+    "build:worker": "npm run build --workspace=apps/worker",
+    "build:microservice": "npm run build --workspace=apps/microservice",
+    "deploy:worker": "npm run deploy --workspace=apps/worker",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "tsc --build",
+    "lint": "eslint apps packages --ext .ts,.tsx",
+    "nats:start": "docker-compose up -d nats",
+    "nats:stop": "docker-compose down",
+    "clean": "rm -rf apps/*/dist packages/*/dist node_modules/.cache"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

@@ -1,0 +1,11 @@
+name = "tasks-worker"
+main = "src/index.tsx"
+compatibility_date = "2024-05-12"
+
+[[kv_namespaces]]
+binding = "TASKS_KV"
+id = "YOUR_KV_NAMESPACE_ID"
+preview_id = "YOUR_KV_PREVIEW_NAMESPACE_ID"
+
+[vars]
+ENVIRONMENT = "development"
